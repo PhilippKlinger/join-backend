@@ -9,7 +9,9 @@ class Contact(models.Model):
     email = models.EmailField(max_length=100)
     phone = models.CharField(max_length=100, blank=True, null=True)
     color = models.CharField(max_length=7, default="#417690")
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, blank=True, null=True
+    )
 
     def __str__(self):
         return f"({self.id}) {self.firstname} {self.lastname}"
@@ -23,29 +25,35 @@ class Category(models.Model):
 
 
 class Task(models.Model):
-    # Priority choices
-    LOW = "low"
-    MID = "mid"
-    HIGH = "high"
     PRIORITY_CHOICES = [
-        (LOW, "Low"),
-        (MID, "Mid"),
-        (HIGH, "High"),
+        ("low", "Low"),
+        ("medium", "Medium"),
+        ("urgent", "Urgent"),
+    ]
+
+    TODO_STATE = [
+        ("todo", "Todo"),
+        ("awaiting_feedback", "Awaiting Feedback"),
+        ("in_progress", "In Progress"),
+        ("done", "Done"),
     ]
 
     title = models.CharField(max_length=30)
     description = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     assigned_to = models.ManyToManyField(Contact, related_name="assigned_tasks", blank=True)
+    created_at = models.DateField(default=date.today)
     due_date = models.DateField(default=date.today)
-    priority = models.CharField(max_length=4, choices=PRIORITY_CHOICES, default=LOW)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="low")
+    #subtasks = models.ManyToManyField('SubTask', through='TaskSubTask', related_name='tasks', blank=True)
+    color = models.CharField(max_length=7, default="#417690")
+    status = models.CharField(max_length=20, choices=TODO_STATE, default="todo")
 
     def __str__(self):
         return self.title
-
-
+    
+    
 class SubTask(models.Model):
-    task = models.ForeignKey(Task, related_name="subtasks", on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
     completed = models.BooleanField(default=False)
 

@@ -13,31 +13,38 @@ from .models import Task, Contact
 from .serializers import TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
 
 
-@api_view(
-    [
-        "GET",
-        "POST",
-        "DELETE",
-    ]
-)
+@api_view(["GET", "POST", "DELETE"])
 @authentication_classes([TokenAuthentication])
-@permission_classes(
-    [IsAuthenticated]
-)  # Stelle sicher, dass der Benutzer authentifiziert ist
+@permission_classes([IsAuthenticated])
 def task_list(request):
     if request.method == "GET":
-        # Optional: Tasks nur für den angemeldeten Benutzer anzeigen
-        tasks = Task.objects.filter(assigned_to=request.user)
+        # Finde den Contact, der dem eingeloggten User zugeordnet ist
+        user_contact = Contact.objects.filter(user=request.user)
+        tasks = Task.objects.filter(assigned_to__in=user_contact)
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
+
     elif request.method == "POST":
-        # Ergänze die `assigned_to` Information automatisch mit dem aktuellen Benutzer
-        serializer = TaskSerializer(data=request.data)
+        data = request.data.copy()
+
+        # Hier nimmst du die IDs der Contacts aus den übermittelten Daten
+        assigned_to_ids = data.get("assigned_to", [])
+        if not isinstance(assigned_to_ids, list):
+            assigned_to_ids = [assigned_to_ids]
+        
+        # Entferne 'assigned_to' aus den Daten, da du es später separat handhabst
+        data.pop("assigned_to", None)
+
+        serializer = TaskSerializer(data=data)
         if serializer.is_valid():
-            # Setze den Benutzer bevor du speicherst
-            serializer.save(assigned_to=request.user)
+            task = serializer.save()
+            
+            # Setze hier die Contacts, basierend auf den übermittelten IDs
+            if assigned_to_ids:
+                task.assigned_to.set(Contact.objects.filter(id__in=assigned_to_ids))
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "DELETE"])
@@ -114,7 +121,7 @@ def contacts_list(request):
 @authentication_classes([TokenAuthentication])
 def contact_detail(request, pk):
     try:
-        contact = Contact.objects.get(pk=pk, user=request.user)
+        contact = Contact.objects.get(pk=pk)
     except Contact.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 

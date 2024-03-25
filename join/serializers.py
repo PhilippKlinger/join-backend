@@ -1,13 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from .models import Task, Contact
+from .models import Task, Contact, Category
 
 
-class TaskSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Task
-        fields = "__all__"
 
 
 class LoginSerializer(serializers.Serializer):
@@ -49,3 +45,21 @@ class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = '__all__'
+        
+class ContactNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ['firstname', 'lastname']  # Anzeigen von Vor- und Nachnamen
+
+class CategoryNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['name']  # Anzeigen des Kategorienamens
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    assigned_to = ContactNameSerializer(many=True, read_only=True)
+    category = CategoryNameSerializer(read_only=True)
+    class Meta:
+        model = Task
+        fields = "__all__"
