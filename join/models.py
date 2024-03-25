@@ -8,7 +8,7 @@ class Contact(models.Model):
     lastname = models.CharField(max_length=100)
     email = models.EmailField(max_length=100)
     phone = models.CharField(max_length=100, blank=True, null=True)
-    color = models.CharField(max_length=7, default="#FFFFFF")
+    color = models.CharField(max_length=7, default="#417690")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):

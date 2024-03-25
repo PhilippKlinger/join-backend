@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from .models import Task
+from .models import Task, Contact
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -44,3 +44,8 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data["password"],
         )
         return user
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = '__all__'
