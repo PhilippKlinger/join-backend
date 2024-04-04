@@ -49,17 +49,24 @@ class ContactSerializer(serializers.ModelSerializer):
 class ContactNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
-        fields = ['firstname', 'lastname']  # Anzeigen von Vor- und Nachnamen
-
-class CategoryNameSerializer(serializers.ModelSerializer):
+        fields = ['firstname', 'lastname']  
+        
+class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['name']  # Anzeigen des Kategorienamens
+        fields = '__all__'  
 
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to = ContactNameSerializer(many=True, read_only=True)
-    category = CategoryNameSerializer(read_only=True)
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source='category', write_only=True, allow_null=True
+    )
+
     class Meta:
         model = Task
         fields = "__all__"
+        extra_kwargs = {
+            'category': {'read_only': True},
+        }
+

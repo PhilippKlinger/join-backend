@@ -9,8 +9,8 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Task, Contact
-from .serializers import TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
+from .models import Category, Task, Contact
+from .serializers import CategorySerializer, TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
 
 
 @api_view(["GET", "POST", "DELETE"])
@@ -18,33 +18,23 @@ from .serializers import TaskSerializer, UserRegistrationSerializer, LoginSerial
 @permission_classes([IsAuthenticated])
 def task_list(request):
     if request.method == "GET":
-        # Finde den Contact, der dem eingeloggten User zugeordnet ist
         user_contact = Contact.objects.filter(user=request.user)
         tasks = Task.objects.filter(assigned_to__in=user_contact)
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
     elif request.method == "POST":
-        data = request.data.copy()
-
-        # Hier nimmst du die IDs der Contacts aus den übermittelten Daten
-        assigned_to_ids = data.get("assigned_to", [])
-        if not isinstance(assigned_to_ids, list):
-            assigned_to_ids = [assigned_to_ids]
-        
-        # Entferne 'assigned_to' aus den Daten, da du es später separat handhabst
-        data.pop("assigned_to", None)
-
-        serializer = TaskSerializer(data=data)
+        # Da der Serializer nun direkt mit category_id umgehen kann, ist keine besondere Behandlung erforderlich.
+        serializer = TaskSerializer(data=request.data)
         if serializer.is_valid():
+            # Der Task wird gespeichert, inklusive der zugeordneten Kontakte und der Kategorie.
             task = serializer.save()
-            
-            # Setze hier die Contacts, basierend auf den übermittelten IDs
-            if assigned_to_ids:
-                task.assigned_to.set(Contact.objects.filter(id__in=assigned_to_ids))
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            # Nachdem der Task gespeichert wurde, können zusätzliche Aktionen durchgeführt werden, falls nötig.
+            return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(["GET", "PUT", "DELETE"])
@@ -139,3 +129,20 @@ def contact_detail(request, pk):
     elif request.method == "DELETE":
         contact.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+@authentication_classes([TokenAuthentication])
+def category_list(request):
+    if request.method == "GET":
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True)
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        serializer = CategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from join.views import task_list, login, register_user, contacts_list, contact_detail
+from join.views import task_list, login, register_user, contacts_list, contact_detail, category_list
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,4 +26,5 @@ urlpatterns = [
     path('login/', login, name='login'),
     path('contacts/', contacts_list, name='contacts_list'),
     path('contacts/<int:pk>/', contact_detail, name='contact_detail'),
+    path('categories/', category_list, name='category-list'),
 ]

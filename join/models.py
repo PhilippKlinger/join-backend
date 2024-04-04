@@ -19,9 +19,10 @@ class Contact(models.Model):
 
 class Category(models.Model):
     name = models.CharField(max_length=30, unique=True)
-
+    color = models.CharField(max_length=15, default="red")
+    
     def __str__(self):
-        return self.name
+        return f"({self.id}) {self.name} {self.color}"
 
 
 class Task(models.Model):
