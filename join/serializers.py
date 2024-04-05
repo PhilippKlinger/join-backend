@@ -56,9 +56,15 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'  
 
+class CategoryDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['name', 'color']
+
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to = ContactNameSerializer(many=True, read_only=True)
+    assignedTo = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True, allow_null=True
     )
@@ -70,3 +76,9 @@ class TaskSerializer(serializers.ModelSerializer):
             'category': {'read_only': True},
         }
 
+    def get_assignedTo(self, obj):
+        # Diese Methode gibt die Namen der zugeordneten Kontakte in der gewünschten Form zurück
+        return [f"{contact.firstname} {contact.lastname}" for contact in obj.assignedTo.all()]
+    
+    def get_category(self, obj):
+        return obj.category.name if obj.category else None

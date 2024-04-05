@@ -18,8 +18,7 @@ from .serializers import CategorySerializer, TaskSerializer, UserRegistrationSer
 @permission_classes([IsAuthenticated])
 def task_list(request):
     if request.method == "GET":
-        user_contact = Contact.objects.filter(user=request.user)
-        tasks = Task.objects.filter(assigned_to__in=user_contact)
+        tasks = Task.objects.all()
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 

@@ -3,7 +3,7 @@ from .models import Task, SubTask, Category, Contact
 
 class TaskAdmin(admin.ModelAdmin):
     # Dies ermöglicht eine einfachere Auswahl und Zuweisung von Kontakten zu einem Task
-    filter_horizontal = ('assigned_to',)
+    filter_horizontal = ('assignedTo',)
     # oder filter_vertical = ('assigned_to',) je nach Vorliebe
 
 admin.site.register(Task, TaskAdmin)

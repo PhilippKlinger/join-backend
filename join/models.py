@@ -23,6 +23,14 @@ class Category(models.Model):
     
     def __str__(self):
         return f"({self.id}) {self.name} {self.color}"
+    
+    
+class SubTask(models.Model):
+    title = models.CharField(max_length=30)
+    completed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
 
 
 class Task(models.Model):
@@ -34,29 +42,22 @@ class Task(models.Model):
 
     TODO_STATE = [
         ("todo", "Todo"),
-        ("awaiting_feedback", "Awaiting Feedback"),
-        ("in_progress", "In Progress"),
+        ("awaitingFeedback", "Awaiting Feedback"),
+        ("inProgress", "In Progress"),
         ("done", "Done"),
     ]
 
     title = models.CharField(max_length=30)
     description = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    assigned_to = models.ManyToManyField(Contact, related_name="assigned_tasks", blank=True)
+    assignedTo = models.ManyToManyField(Contact, related_name="assigned_tasks", blank=True)
     created_at = models.DateField(default=date.today)
-    due_date = models.DateField(default=date.today)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="low")
-    #subtasks = models.ManyToManyField('SubTask', through='TaskSubTask', related_name='tasks', blank=True)
+    date = models.DateField(default=date.today)
+    prio = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="low")
+    subtasks = models.ManyToManyField(SubTask, related_name='tasks', blank=True)
     color = models.CharField(max_length=7, default="#417690")
-    status = models.CharField(max_length=20, choices=TODO_STATE, default="todo")
+    stat = models.CharField(max_length=20, choices=TODO_STATE, default="todo")
 
     def __str__(self):
         return self.title
     
-    
-class SubTask(models.Model):
-    title = models.CharField(max_length=30)
-    completed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.title
