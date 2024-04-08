@@ -28,11 +28,13 @@ DEBUG = True
 ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
+    "philipp-klinger.developerakademie.net"
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
+    "https://philipp-klinger.developerakademie.net"
 ]
 
 # Application definition

@@ -1,0 +1,11 @@
+
+(env) E:\Developer Akademie\Projekte\backend\join-backend>git add . 
+
+(env) E:\Developer Akademie\Projekte\backend\join-backend>git commit -m "added several test - coverage 87%" 
+[main df64b99] added several test - coverage 87%
+ 6 files changed, 193 insertions(+), 27 deletions(-)
+ create mode 100644 coverage_report.txt
+ create mode 100644 join/helpers.py
+ create mode 100644 test
+
+(env) E:\Developer Akademie\Projekte\backend\join-backend>git push 
