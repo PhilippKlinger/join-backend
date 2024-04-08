@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
-from .models import Task, Contact, Category
-
+from .models import Task, Contact, Category, SubTask
 
 
 
@@ -41,20 +40,24 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         )
         return user
 
+
 class ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = '__all__'
+   
         
 class ContactNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = ['firstname', 'lastname']  
+    
         
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'  
+
 
 class CategoryDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,12 +65,19 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
         fields = ['name', 'color']
 
 
+class SubTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubTask
+        fields = '__all__'
+
+
 class TaskSerializer(serializers.ModelSerializer):
-    assignedTo = serializers.SerializerMethodField()
+    assigned_to = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source='category', write_only=True, allow_null=True
     )
+    subtasks = SubTaskSerializer(many=True, required=False)
 
     class Meta:
         model = Task
@@ -76,9 +86,9 @@ class TaskSerializer(serializers.ModelSerializer):
             'category': {'read_only': True},
         }
 
-    def get_assignedTo(self, obj):
-        # Diese Methode gibt die Namen der zugeordneten Kontakte in der gewünschten Form zurück
-        return [f"{contact.firstname} {contact.lastname}" for contact in obj.assignedTo.all()]
+    def get_assigned_to(self, obj):
+        return [{'color': contact.color, 'name': f"{contact.firstname} {contact.lastname}"} for contact in obj.assigned_to.all()]
+
     
     def get_category(self, obj):
         return obj.category.name if obj.category else None

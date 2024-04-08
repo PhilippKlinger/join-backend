@@ -25,14 +25,6 @@ class Category(models.Model):
         return f"({self.id}) {self.name} {self.color}"
     
     
-class SubTask(models.Model):
-    title = models.CharField(max_length=30)
-    completed = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.title
-
-
 class Task(models.Model):
     PRIORITY_CHOICES = [
         ("low", "Low"),
@@ -50,14 +42,20 @@ class Task(models.Model):
     title = models.CharField(max_length=30)
     description = models.CharField(max_length=100)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    assignedTo = models.ManyToManyField(Contact, related_name="assigned_tasks", blank=True)
+    assigned_to = models.ManyToManyField(Contact, related_name="assigned_tasks", blank=True)
     created_at = models.DateField(default=date.today)
     date = models.DateField(default=date.today)
     prio = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="low")
-    subtasks = models.ManyToManyField(SubTask, related_name='tasks', blank=True)
-    color = models.CharField(max_length=7, default="#417690")
     stat = models.CharField(max_length=20, choices=TODO_STATE, default="todo")
 
     def __str__(self):
-        return self.title
+        return f"({self.id}) ------ {self.title}"
     
+
+class SubTask(models.Model):
+    title = models.CharField(max_length=50)
+    completed = models.BooleanField(default=False)
+    task = models.ForeignKey(Task, related_name='subtasks', on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return f"({self.id}) {self.title}"

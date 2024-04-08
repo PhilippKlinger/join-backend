@@ -9,11 +9,11 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Category, Task, Contact
-from .serializers import CategorySerializer, TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
+from .models import Category, Task, Contact, SubTask
+from .serializers import CategorySerializer, SubTaskSerializer, TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
 
 
-@api_view(["GET", "POST", "DELETE"])
+@api_view(["GET", "POST"])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def task_list(request):
@@ -23,20 +23,24 @@ def task_list(request):
         return Response(serializer.data)
 
     elif request.method == "POST":
-        # Da der Serializer nun direkt mit category_id umgehen kann, ist keine besondere Behandlung erforderlich.
-        serializer = TaskSerializer(data=request.data)
+        data = request.data.copy()
+        assigned_to_ids = data.pop("assigned_to", None)
+        subtasks_data = data.pop("subtasks", [])
+        
+        serializer = TaskSerializer(data=data)
         if serializer.is_valid():
-            # Der Task wird gespeichert, inklusive der zugeordneten Kontakte und der Kategorie.
             task = serializer.save()
-
-            # Nachdem der Task gespeichert wurde, können zusätzliche Aktionen durchgeführt werden, falls nötig.
+            if assigned_to_ids:
+                assigned_contacts = Contact.objects.filter(id__in=assigned_to_ids)
+                task.assigned_to.set(assigned_contacts)
+            for subtask_data in subtasks_data:
+                SubTask.objects.create(task=task, **subtask_data)
             return Response(TaskSerializer(task).data, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["GET", "PATCH", "DELETE"])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def task_detail(request, pk):
@@ -49,44 +53,28 @@ def task_detail(request, pk):
         serializer = TaskSerializer(task)
         return Response(serializer.data)
 
-    elif request.method == "PUT":
-        serializer = TaskSerializer(task, data=request.data)
+    elif request.method == "PATCH":
+        serializer = TaskSerializer(task, data=request.data, partial=True)
+        subtasks_data = request.data.pop('subtasks', [])
+        
         if serializer.is_valid():
             serializer.save()
+            for subtask_data in subtasks_data:
+                subtask_id = subtask_data.get('id', None)
+                if subtask_id:
+                    subtask_instance = SubTask.objects.filter(id=subtask_id, task=task).first()
+                    if subtask_instance:
+                        subtask_serializer = SubTaskSerializer(subtask_instance, data=subtask_data)
+                        if subtask_serializer.is_valid():
+                            subtask_serializer.save()
+                    else:
+                        return Response({'error': 'Subtask not found or does not belong to task.'}, status=status.HTTP_400_BAD_REQUEST)        
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == "DELETE":
         task.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def register_user(request):
-    serializer = UserRegistrationSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        return Response(
-            {"user_id": user.pk, "email": user.email, "token": token.key},
-            status=status.HTTP_201_CREATED,
-        )
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def login(request):
-    serializer = LoginSerializer(data=request.data)
-
-    if serializer.is_valid():
-        user = serializer.validated_data
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "user_id": user.pk, "email": user.email})
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "POST"])
@@ -104,6 +92,7 @@ def contacts_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
@@ -145,3 +134,36 @@ def category_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
+    
+    
+# -------------------optional--------------------
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def register_user(request):
+    serializer = UserRegistrationSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        token, created = Token.objects.get_or_create(user=user)
+        return Response(
+            {"user_id": user.pk, "email": user.email, "token": token.key},
+            status=status.HTTP_201_CREATED,
+        )
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login(request):
+    serializer = LoginSerializer(data=request.data)
+
+    if serializer.is_valid():
+        user = serializer.validated_data
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({"token": token.key, "user_id": user.pk, "email": user.email})
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
