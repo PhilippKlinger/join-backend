@@ -23,9 +23,11 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('tasks/', task_list, name='task-list'),
     path('tasks/<int:pk>/', task_detail, name='task-detail'),
-    path('register/', register_user, name='register'),
-    path('login/', login, name='login'),
     path('contacts/', contacts_list, name='contacts_list'),
     path('contacts/<int:pk>/', contact_detail, name='contact_detail'),
     path('categories/', category_list, name='category-list'),
+    
+    # ------------------optional------------------ #
+    path('register/', register_user, name='register'),
+    path('login/', login, name='login'),
 ]

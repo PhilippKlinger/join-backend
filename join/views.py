@@ -10,7 +10,14 @@ from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Category, Task, Contact, SubTask
-from .serializers import CategorySerializer, SubTaskSerializer, TaskSerializer, UserRegistrationSerializer, LoginSerializer, ContactSerializer
+from .serializers import (
+    CategorySerializer,
+    TaskSerializer,
+    UserRegistrationSerializer,
+    LoginSerializer,
+    ContactSerializer,
+)
+from .helpers import process_subtasks
 
 
 @api_view(["GET", "POST"])
@@ -21,12 +28,10 @@ def task_list(request):
         tasks = Task.objects.all()
         serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
-
     elif request.method == "POST":
         data = request.data.copy()
         assigned_to_ids = data.pop("assigned_to", None)
         subtasks_data = data.pop("subtasks", [])
-        
         serializer = TaskSerializer(data=data)
         if serializer.is_valid():
             task = serializer.save()
@@ -55,23 +60,16 @@ def task_detail(request, pk):
 
     elif request.method == "PATCH":
         serializer = TaskSerializer(task, data=request.data, partial=True)
-        subtasks_data = request.data.pop('subtasks', [])
-        
-        if serializer.is_valid():
-            serializer.save()
-            for subtask_data in subtasks_data:
-                subtask_id = subtask_data.get('id', None)
-                if subtask_id:
-                    subtask_instance = SubTask.objects.filter(id=subtask_id, task=task).first()
-                    if subtask_instance:
-                        subtask_serializer = SubTaskSerializer(subtask_instance, data=subtask_data)
-                        if subtask_serializer.is_valid():
-                            subtask_serializer.save()
-                    else:
-                        return Response({'error': 'Subtask not found or does not belong to task.'}, status=status.HTTP_400_BAD_REQUEST)        
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        subtasks_data = request.data.pop("subtasks", [])
 
+        if serializer.is_valid():
+            task = serializer.save()
+            errors = process_subtasks(task, subtasks_data)
+            if errors:
+                return Response({'subtasks_errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(TaskSerializer(task).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     elif request.method == "DELETE":
         task.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -134,11 +132,8 @@ def category_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    
-    
-    
-    
+
+
 # -------------------optional--------------------
 @api_view(["POST"])
 @permission_classes([AllowAny])
@@ -166,4 +161,3 @@ def login(request):
         return Response({"token": token.key, "user_id": user.pk, "email": user.email})
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
