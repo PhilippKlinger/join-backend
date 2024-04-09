@@ -158,6 +158,6 @@ def login(request):
     if serializer.is_valid():
         user = serializer.validated_data
         token, created = Token.objects.get_or_create(user=user)
-        return Response({"token": token.key, "user_id": user.pk, "email": user.email})
+        return Response({"token": token.key, "user_id": user.pk, "username": user.username})
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
