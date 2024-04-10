@@ -19,7 +19,7 @@ class LoginSerializer(serializers.Serializer):
         if user is None:
             raise serializers.ValidationError("Invalid login credentials")
         return user
-
+ 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
